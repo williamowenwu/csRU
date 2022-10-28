@@ -8,19 +8,17 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 import constants
+import course
 
-chrome_options = Options()
-chrome_options.add_experimental_option("detach", True) #keeps chrome open
-chrome_options.add_experimental_option('excludeSwitches', ['enable-logging']) #stops continuous prints from Selenium
-# chrome_options.add_argument('headless')
 def start_session()->webdriver:
+    chrome_options = Options()
+    # chrome_options.add_experimental_option("detach", True) #keeps chrome open
+    chrome_options.add_experimental_option('excludeSwitches', ['enable-logging']) #stops continuous prints from Selenium
+    chrome_options.add_argument('headless')
     driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()),options=chrome_options)
     driver.get(constants.SOC)
     return driver
     
-# driver = webdriver.Chrome(service=ChromeService(executable_path=ChromeDriverManager().install()),options=chrome_options)
-
-# driver.get(constants.SOC)
 def navigate_to_cs_courses_fall_2022(driver:webdriver):
     try:
         fall_spring = WebDriverWait(driver, timeout=10).until(lambda d: d.find_element(By.ID,"FALL_SPRING_1_INPUT"))
@@ -51,9 +49,6 @@ def navigate_to_cs_courses_fall_2022(driver:webdriver):
         print("for some reason youre not in the subject box")
         exit(1)
 
-# finally:
-#     driver.quit()
-
 def get_soup(driver:webdriver)->BeautifulSoup:
     html_source = driver.page_source
     return BeautifulSoup(html_source, "html.parser")
@@ -62,18 +57,34 @@ def main():
     driver = start_session()
     navigate_to_cs_courses_fall_2022(driver)
     soup = get_soup(driver)
-    course_name_spans = soup.find_all('span', class_='courseTitle') #*the right one
-    instructors = soup.find_all('span', class_="instructors")
-    for i in instructors:
-        print(i.text)
+    subjects = soup.find_all('div', class_='subject')
+    
+    objs = []
+    for subject in subjects:
+        title = subject.find('span', class_="courseTitle").text
+        course_id = subject.find('span', class_='courseId').span.span.text
+        try:
+            open_sections = subject.find('span', class_='courseOpenSectionsNumerator').text
+        except AttributeError:
+            try:
+                open_sections = subject.find('span', class_='courseOpenSectionsNumeratorZero').text
+            except AttributeError:
+                print("welp")
+                exit(1)
+        all_sections = subject.find('span', class_='courseOpenSectionsDenominator').text
+        # print(f"{course_id}--> {title}")
+        # print(f"Sections: {open_sections}{all_sections}")
+        objs.append(course.Course(title,course_id, open_sections + all_sections))
+    
+    print(objs[6].course_title)
+    print(objs[6].sections)
+    
+    # instructors = soup.find_all('span', class_="instructors")
+    # for i in instructors:
+    #     print(i.text)
 
 if __name__ == "__main__":
     main()
-# for c in course_name_spans:
-#     print(c.text)
-    
 
-# print(soup.find('span', class_='courseTitle'))
- 
 
 
