@@ -28,6 +28,13 @@ def create_course(course : schemas.Course,db: Session = Depends(get_db), user_id
     #                 (course.course_title,course.course_id,course.is_elective))
     # new_course = cursor.fetchone()
     # conn.commit()
+    existing_rutgers_course_id = db.query(models.Course).filter(models.Course.rutgers_course_id == course.rutgers_course_id)
+    existing_rutgers_course_title = db.query(models.Course).filter(models.Course.course_title == course.course_title)
+    
+    if existing_rutgers_course_id or existing_rutgers_course_title:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Course already exists")
+    
     #* The ** unpacks the entire dictionary
     new_course = models.Course(**course.dict())
     db.add(new_course)
@@ -128,7 +135,7 @@ def link_course_with_prof(prof_course: schemas.ProfCourse, db: Session = Depends
     if not prof_query:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"There is no professor with id: {prof_course.professor_id}")
-    # todo: need to figure out duplicates
+    # todo: need to figure out duplicate rows
     prof_course.course_id = prof_course.course_id
     new_prof_course_connection = models.Prof_Course(**prof_course.dict())
     db.add(new_prof_course_connection)
