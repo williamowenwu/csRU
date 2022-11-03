@@ -6,6 +6,7 @@ from ..schemas import Token
 from ..models import User
 from ..utils import verify
 from ..oauth2 import create_access_token
+
 router = APIRouter(
     tags=['Authentication']
 )
@@ -23,6 +24,6 @@ def login(user: OAuth2PasswordRequestForm = Depends(), db:Session = Depends(get_
                         detail="Invalid Credentials")
     access_token = create_access_token(data={"user_id" : database_user.id})
     
-    return {"access_token": access_token, 
+    return {"access_token": access_token,
             "token_type": "bearer"
             }

@@ -4,6 +4,7 @@ class Course(BaseModel):
     course_title: str
     rutgers_course_id: str
     is_elective : bool = False
+    profs : list 
     
 class CourseResponse(BaseModel):
     course_title: str
@@ -16,7 +17,6 @@ class CourseResponse(BaseModel):
 class Professor(BaseModel):
     name : str
     location : str
-    
         
 class ProfessorResponse(Professor):
     
@@ -33,7 +33,6 @@ class ProfCourse(BaseModel):
 class UserCreate(BaseModel):
     email : EmailStr
     password : str
-    
     
 class UserResponse(BaseModel):
     email : EmailStr

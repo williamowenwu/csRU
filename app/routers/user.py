@@ -1,5 +1,6 @@
 from fastapi import FastAPI,Response,status,HTTPException,Depends,APIRouter
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from ..database import get_db
 from .. import models,schemas,utils
 
@@ -10,18 +11,32 @@ router = APIRouter(
 
 @router.post("/",status_code=status.HTTP_201_CREATED,response_model=schemas.UserResponse)
 def create_user(user: schemas.UserCreate,db:Session = Depends(get_db)):
-    duplicate = db.query(models.User).filter(models.User.email == user.email).first()
+    # duplicate = db.query(models.User).filter(models.User.email == user.email).first()
     
-    if duplicate:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                        detail= "Email Already Exists")
+    # if duplicate:
+    #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+    #                     detail= "Email Already Exists")
     #hashes the password -> security measure
     user.password = utils.hash(user.password)
 
     new_user = models.User(**user.dict())
     db.add(new_user)
-    db.commit()
+    
+    try: 
+        db.commit()
+    except IntegrityError:
+        db.rollback()  
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already exists"
+        )
+    except Exception as e:
+        db.rollback()
+        print(e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+    
     db.refresh(new_user)
+    
     return new_user
 
 @router.get("/{id}",response_model=schemas.UserResponse)
