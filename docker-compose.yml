@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  database:
+    image: "postgres:14.5"
+    environment:
+      POSTGRES_PASSWORD: 12post34gres!
+      POSTGRES_USER: will
+      POSTGRES_DB: csru
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data/
+  
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    ports:
+      - "5009:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ww365@scarletmail.rutgers.edu
+      PGADMIN_DEFAULT_PASSWORD: 12post34gres!
+    volumes:
+    - pgadmin-data:/var/lib/pgadmin
+  
+  api:
+    env_file:
+      - .env
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+
+volumes:
+  pgadmin-data: {}
+  db-data: {}
