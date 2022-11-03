@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from app.routers import professor
 
-from . import models
-from .database import engine
+# from . import models
+# from .database import engine
 from .routers import course, user, auth
 
-models.Base.metadata.create_all(bind=engine)
+# models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
