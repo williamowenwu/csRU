@@ -1,11 +1,10 @@
 from fastapi import FastAPI
-from app.routers import professor
 
-# from . import models
-# from .database import engine
-from .routers import course, user, auth
+from .storage import models
+from .storage.database import engine
+from .routers import course, user, auth, professor
 
-# models.Base.metadata.create_all(bind=engine)
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 

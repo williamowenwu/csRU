@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from ..database import get_db
-from .. import models, schemas
 
-router = APIRouter(
-    prefix="/professors",
-    tags=['Professors']
-)
+from ..storage import models
+from ..storage.database import get_db
+from ..domain import schemas
+
+router = APIRouter(prefix="/professors", tags=["Professors"])
 
 
 @router.get("/")
@@ -21,7 +20,7 @@ def create_professor(professor: schemas.Professor, db: Session = Depends(get_db)
     if db.query(models.Professor).filter(models.Professor.name == professor.name).first():
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Professor {professor.name} already exists"
+            detail=f"Professor {professor.name} already exists",
         )
 
     new_professor = models.Professor(**professor.dict())
@@ -36,13 +35,11 @@ def delete_professor(id: int, db: Session = Depends(get_db)):
     prof_to_delete = db.query(models.Professor).filter(models.Professor.id == id)
 
     if not prof_to_delete.first():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Professor not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Professor not found")
 
     prof_to_delete.delete(synchronize_session=False)
     db.commit()
+
 
 # @router.put("/{id}",
 # status_code=status.HTTP_202_ACCEPTED, response_model=schemas.ProfessorResponse)

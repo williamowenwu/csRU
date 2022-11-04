@@ -1,11 +1,27 @@
+import datetime
+
 from pydantic import BaseModel, EmailStr
+from ..storage import models
 
 
 class Course(BaseModel):
     profs: list
     course_title: str
     rutgers_course_id: str
-    is_elective: bool = False
+    is_elective: bool
+    created_at: datetime.datetime
+    id: int
+
+    @classmethod
+    def from_db_course(cls, course: models.Course):
+        return cls(
+            profs=course.profs,
+            course_title=course.course_title,
+            rutgers_course_id=course.rutgers_course_id,
+            is_elective=course.is_elective,
+            created_at=course.created_at,
+            id=course.id,
+        )
 
 
 class CourseResponse(BaseModel):
@@ -23,7 +39,6 @@ class Professor(BaseModel):
 
 
 class ProfessorResponse(Professor):
-
     class Config:
         orm_mode = True
 
