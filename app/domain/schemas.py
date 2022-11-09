@@ -8,9 +8,9 @@ class Course(BaseModel):
     profs: list
     course_title: str
     rutgers_course_id: str
-    is_elective: bool
-    created_at: datetime.datetime
-    id: int
+    is_elective: bool = False
+    created_at: datetime.datetime | None
+    id: int | None
 
     @classmethod
     def from_db_course(cls, course: models.Course):

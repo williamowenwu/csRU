@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 from ..storage import models
-from ..domain import schemas
+from ..domain import schemas, validate
 from ..storage.database import get_db
 from ..auth import oauth2
 
@@ -21,47 +21,32 @@ def get_courses(db: Session = Depends(get_db)):
     return [course_model.dict(exclude={"id", "created_at"}) for course_model in course_models]
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.CourseResponse)
-def create_course(course: schemas.Course, db: Session = Depends(get_db)):
-    # cursor.execute("""
-    #                 INSERT INTO courses
-    #                 (course_title,course_id,is_elective)
-    #                 VALUES(%s,%s,%s)
-    #                 RETURNING *
-    #                 """,
-    #                 (course.course_title,course.course_id,course.is_elective))
-    # new_course = cursor.fetchone()
-    # conn.commit()
-    new_course = course.dict()
-    profs = new_course.pop("profs")
-    print(profs)
+@router.post("/", status_code=status.HTTP_201_CREATED)
+def create_course(course: validate.ValidateCourse, db: Session = Depends(get_db)):
     # * The ** unpacks the entire dictionary
-    new_course = models.Course(**new_course)
-    print(new_course)
+    new_course = models.Course(**course)
     db.add(new_course)
     try:
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="course already exists")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="course already exists"
+        )
     except Exception:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
 
     db.refresh(new_course)  # Equivalent to SQL command: RETURNING *
-    return new_course
+    return course
 
 
 @router.get("/{id}")
 def get_id_course(
     id: int, db: Session = Depends(get_db), user_id: int = Depends(oauth2.get_current_user)
 ):
-    # cursor.execute("""
-    #                 SELECT * FROM courses
-    #                 WHERE id = %s
-    #             """,[str(id)])
-    # course = cursor.fetchone()
-    course = db.query((models.Course)).filter(models.Course.id == id).first()
+    course = db.query((models.Course)).get(id)
 
     if not course:
         raise HTTPException(
@@ -74,13 +59,7 @@ def get_id_course(
 def delete_course(
     id: int, db: Session = Depends(get_db), user_id: int = Depends(oauth2.get_current_user)
 ):
-    # cursor.execute("""
-    #                DELETE FROM courses
-    #                WHERE id = %s
-    #                RETURNING *
-    #             """,[str(id)])
-    # deleted_course = cursor.fetchone()
-    # conn.commit()
+
     deleted_course = db.query(models.Course).filter(models.Course.id == id)
 
     if deleted_course.first() is None:
@@ -101,17 +80,7 @@ def update_course(
     db: Session = Depends(get_db),
     user_id: int = Depends(oauth2.get_current_user),
 ):
-    #     cursor.execute("""
-    #                    UPDATE courses SET
-    #                    course_title = %s,
-    #                    course_id = %s,
-    #                    is_elective = %s
-    #                    WHERE id = %s
-    #                    RETURNING *""",
-    #                    (course.course_title,course.course_id,course.is_elective,str(id))
-    #                 )
-    #     updated_course = cursor.fetchone()
-    #     conn.commit()
+
     updated_course = db.query(models.Course).filter(models.Course.id == id)
 
     course_query = updated_course.first()
