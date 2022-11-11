@@ -12,19 +12,17 @@ router = APIRouter(prefix="/courses", tags=["Courses"])
 
 @router.get("/")
 def get_courses(db: Session = Depends(get_db)):
-    # courses = cursor.execute("""
-    #                SELECT * FROM courses
-    #             """).fetchall()
-    # return courses
     courses = db.query(models.Course).all()
-    course_models = [schemas.Course.from_db_course(model) for model in courses]
+
+    course_models = [validate.ValidateCourse.from_db_course(model) for model in courses]
     return [course_model.dict(exclude={"id", "created_at"}) for course_model in course_models]
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_course(course: validate.ValidateCourse, db: Session = Depends(get_db)):
     # * The ** unpacks the entire dictionary
-    new_course = models.Course(**course)
+    new_course = models.Course(**course.dict())
+
     db.add(new_course)
     try:
         db.commit()
@@ -59,18 +57,14 @@ def get_id_course(
 def delete_course(
     id: int, db: Session = Depends(get_db), user_id: int = Depends(oauth2.get_current_user)
 ):
+    course_to_delete = db.query(models.Course).filter(models.Course.id == id)
 
-    deleted_course = db.query(models.Course).filter(models.Course.id == id)
-
-    if deleted_course.first() is None:
+    if not course_to_delete:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"course with id {id} is not found"
         )
-
-    deleted_course.delete(synchronize_session=False)
+    course_to_delete.delete(synchronize_session=False)
     db.commit()
-
-    return deleted_course
 
 
 @router.put("/{id}", status_code=status.HTTP_202_ACCEPTED)
@@ -96,23 +90,13 @@ def update_course(
 
 @router.get("/{course_id}/professors")
 def get_professors_of_course_id(course_id: int, db: Session = Depends(get_db)):
-    course = db.query(models.Course).filter(models.Course.id == course_id)
+    course = db.query(models.Course).get(course_id)
 
-    course_query = course.first()
-    if not course_query:
+    if not course:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"course with id {course_id} doesn't exist"
         )
-
-    profs = db.query(models.course_professor).filter(models.course_professor.course_id == course_id)
-
-    all_profs_for_course = profs.all()
-    if not all_profs_for_course:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"There are no professors for course {course_id}",
-        )
-    return all_profs_for_course
+    return course.profs
 
 
 @router.post("/professor-teaching", response_model=schemas.ProfCourse)  # join tables

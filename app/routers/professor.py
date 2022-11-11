@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, exc
+from sqlalchemy.exc import IntegrityError
 
 from ..storage import models
 from ..storage.database import get_db
-from ..domain import schemas
+from ..domain import validate
 
 router = APIRouter(prefix="/professors", tags=["Professors"])
 
@@ -11,35 +12,64 @@ router = APIRouter(prefix="/professors", tags=["Professors"])
 @router.get("/")
 def get_all_professors(db: Session = Depends(get_db)):
     all_professors = db.query(models.Professor).all()
-    return all_professors
+
+    prof_models = [
+        validate.ValidateProfessor.from_db_prof(prof_model) for prof_model in all_professors
+    ]
+    return [prof.dict(exclude={"id", "created_at", "courses"}) for prof in prof_models]
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.ProfessorResponse)
-def create_professor(professor: schemas.Professor, db: Session = Depends(get_db)):
-    professor.name = professor.name.title()
-    if db.query(models.Professor).filter(models.Professor.name == professor.name).first():
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Professor {professor.name} already exists",
+@router.post("/", status_code=status.HTTP_201_CREATED)
+def create_professor(professor: validate.ValidateProfessor, db: Session = Depends(get_db)):
+    prof_dict = professor.dict()
+    courses = prof_dict.pop('courses')
+    new_prof = models.Professor(**prof_dict)
+
+    for course_name in courses:
+        course_model = db.query(models.Course).filter(
+            models.Course.rutgers_course_title == course_name
         )
+        course_to_add = course_model.first()
+        new_prof.crs.append(course_to_add)
+    db.add(new_prof)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Professor already exists"
+        )
+    except exc.FlushError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Courses must be valid"
+        )
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
 
-    new_professor = models.Professor(**professor.dict())
-    db.add(new_professor)
-    db.commit()
-    db.refresh(new_professor)
-    return new_professor
+    db.refresh(new_prof)
+    return professor
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_professor(id: int, db: Session = Depends(get_db)):
     prof_to_delete = db.query(models.Professor).filter(models.Professor.id == id)
 
-    if not prof_to_delete.first():
+    if not prof_to_delete:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Professor not found")
-
     prof_to_delete.delete(synchronize_session=False)
     db.commit()
 
+
+@router.get("/{id}/courses")
+def get_all_courses_for_professor(id: int, db: Session = Depends(get_db)):
+    prof = db.query(models.Professor).get(id)
+    if not prof:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Professor not found")
+
+    course_models = [validate.ValidateCourse.from_db_course(course) for course in prof.crs]
+    return [course.dict(exclude={'created_at', 'id'}) for course in course_models]
 
 # @router.put("/{id}",
 # status_code=status.HTTP_202_ACCEPTED, response_model=schemas.ProfessorResponse)
