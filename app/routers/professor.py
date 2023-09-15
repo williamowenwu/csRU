@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, exc
 from sqlalchemy.exc import IntegrityError
-
-from ..storage import models
-from ..storage.database import get_db
-from ..domain import validate
+from pydantic import ValidationError
+from app.storage import models
+from app.storage.database import get_db
+from app.domain import validate
 
 router = APIRouter(prefix="/professors", tags=["Professors"])
 
@@ -27,6 +27,7 @@ def create_professor(professor: validate.ValidateProfessor, db: Session = Depend
 
     for course_name in courses:
         course_model = db.query(models.Course).filter(
+            # todo: replace this with course id once it is finished
             models.Course.rutgers_course_title == course_name
         )
         course_to_add = course_model.first()
@@ -34,6 +35,11 @@ def create_professor(professor: validate.ValidateProfessor, db: Session = Depend
     db.add(new_prof)
     try:
         db.commit()
+    except ValidationError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Incorrect body types"
+        )
     except IntegrityError:
         db.rollback()
         raise HTTPException(
