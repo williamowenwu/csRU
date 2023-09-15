@@ -87,4 +87,4 @@ def create_sections_for_course(
 #     #duplicate course
 
 # update just 1 section of a course
-@router.patch("/{course_id}")
+# @router.patch("/{course_id}")

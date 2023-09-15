@@ -120,73 +120,73 @@ def new_thing():
         print()
 
 
-def navigate_to_cs_courses_fall_2022(driver: webdriver):  # obsolete kinda
-    try:
-        fall_spring = WebDriverWait(driver, timeout=10).until(lambda d: d.find_element(
-            By.ID, "FALL_SPRING_1_INPUT"))
-        fall_spring.click()
-        campus = WebDriverWait(driver, timeout=10).until(
-            lambda d: d.find_element(By.ID, "campus_NB")
-        )
-        campus.click()
-        grade = WebDriverWait(driver, timeout=10).until(lambda d: d.find_element(By.ID, "level_U"))
-        grade.click()
-        con_button = WebDriverWait(driver, timeout=10).until(
-            lambda d: d.find_element(By.ID, "continueButton")
-        )
-        con_button.click()
+# def navigate_to_cs_courses_fall_2022(driver: webdriver):  # obsolete kinda
+#     try:
+#         fall_spring = WebDriverWait(driver, timeout=10).until(lambda d: d.find_element(
+#             By.ID, "FALL_SPRING_1_INPUT"))
+#         fall_spring.click()
+#         campus = WebDriverWait(driver, timeout=10).until(
+#             lambda d: d.find_element(By.ID, "campus_NB")
+#         )
+#         campus.click()
+#         grade = WebDriverWait(driver, timeout=10).until(lambda d: d.find_element(By.ID, "level_U"))
+#         grade.click()
+#         con_button = WebDriverWait(driver, timeout=10).until(
+#             lambda d: d.find_element(By.ID, "continueButton")
+#         )
+#         con_button.click()
 
-        sub_search = WebDriverWait(driver, timeout=10).until(
-            lambda d: d.find_element(By.ID, "subject_search_id")
-        )
-        assert sub_search.get_attribute('class') == 'selected'
+#         sub_search = WebDriverWait(driver, timeout=10).until(
+#             lambda d: d.find_element(By.ID, "subject_search_id")
+#         )
+#         assert sub_search.get_attribute('class') == 'selected'
 
-        course_select = WebDriverWait(driver, timeout=10).until(
-            lambda d: d.find_element(By.ID, "dijit_form_FilteringSelect_0")
-        )
-        course_select.send_keys("Computer Science (198)")
-        course_select.send_keys(Keys.RETURN)
+#         course_select = WebDriverWait(driver, timeout=10).until(
+#             lambda d: d.find_element(By.ID, "dijit_form_FilteringSelect_0")
+#         )
+#         course_select.send_keys("Computer Science (198)")
+#         course_select.send_keys(Keys.RETURN)
 
-        bs = WebDriverWait(driver, timeout=10).until(
-            lambda d: d.find_element(By.ID, "01:198:107.1.courseExpandIcon")
-        )
-        bs.click()
-    except NoSuchElementException:
-        print("Didn't find it")
-        exit(1)
-    except TimeoutException:
-        print("Time Out")
-        exit(1)
-    except AssertionError:
-        print("for some reason youre not in the subject box")
-        exit(1)
+#         bs = WebDriverWait(driver, timeout=10).until(
+#             lambda d: d.find_element(By.ID, "01:198:107.1.courseExpandIcon")
+#         )
+#         bs.click()
+#     except NoSuchElementException:
+#         print("Didn't find it")
+#         exit(1)
+#     except TimeoutException:
+#         print("Time Out")
+#         exit(1)
+#     except AssertionError:
+#         print("for some reason youre not in the subject box")
+#         exit(1)
 
 
-def main():
-    driver = start_session()
-    navigate_to_cs_courses_fall_2022(driver)
-    soup = get_soup(driver)
-    subjects = soup.find_all('div', class_='subject')
+# def main():
+#     driver = start_session()
+#     navigate_to_cs_courses_fall_2022(driver)
+#     soup = get_soup(driver)
+#     subjects = soup.find_all('div', class_='subject')
 
-    objs = []
-    for subject in subjects:
-        title = subject.find('span', class_="courseTitle").text
-        course_id = subject.find('span', class_='courseId').span.span.text
-        try:
-            open_sections = subject.find('span', class_='courseOpenSectionsNumerator').text
-        except AttributeError:
-            try:
-                open_sections = subject.find('span', class_='courseOpenSectionsNumeratorZero').text
-            except AttributeError:
-                print("welp")
-                exit(1)
-        all_sections = subject.find('span', class_='courseOpenSectionsDenominator').text
-        # print(f"{course_id}--> {title}")
-        # print(f"Sections: {open_sections}{all_sections}")
-        objs.append(courses.Course(title, course_id, open_sections + all_sections))
+#     objs = []
+#     for subject in subjects:
+#         title = subject.find('span', class_="courseTitle").text
+#         course_id = subject.find('span', class_='courseId').span.span.text
+#         try:
+#             open_sections = subject.find('span', class_='courseOpenSectionsNumerator').text
+#         except AttributeError:
+#             try:
+#                 open_sections = subject.find('span', class_='courseOpenSectionsNumeratorZero').text
+#             except AttributeError:
+#                 print("welp")
+#                 exit(1)
+#         all_sections = subject.find('span', class_='courseOpenSectionsDenominator').text
+#         # print(f"{course_id}--> {title}")
+#         # print(f"Sections: {open_sections}{all_sections}")
+#         objs.append(courses.Course(title, course_id, open_sections + all_sections))
 
-    print(objs[6].course_title)
-    print(objs[6].sections)
+#     print(objs[6].course_title)
+#     print(objs[6].sections)
 
 
 if __name__ == "__main__":
