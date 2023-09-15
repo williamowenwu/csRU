@@ -15,13 +15,13 @@ You need to trust the third party application, and signing in is optional.
 - ```Docker-compose up -d``` will build all the containers necessary for the application
 - ```sudo docker-compose up --build -d --no-deps api``` will build the API without the dependencies.
 - ```docker-compose down``` will stop the containers
-- ``` docker-compose down -v``` stops containers and removes the volume
+- ```docker-compose down -v``` stops containers and removes the volume
 - ```docker ps``` lists all the docker containers
 
 
 # Limitations
 There are a few limitations on my project:
-- This is only designed with BA/BS degree track in mind. Tackling the all the courses for all the majors/degree paths would be a very daunting task to start off with. I will scale my application, only after creating a minimal viable product. 
+- This is only designed with the Computer Science BA/BS degree track in mind. Tackling the all the courses for all the majors/degree paths would be a very daunting task to start off with. I will scale my application, only after creating a minimal viable product. 
 - If there is no dependencies, the current program has to first start the API so that it will not prematurely try to connect to the postgres database without first creating it. 
 **Note**: this will usually only happen once (at the start of the container creation with docker), or whenever the local volume is deleted.
 - This is still in production, so there is still much to do!
