@@ -4,12 +4,15 @@ My name is William and this is my project that I've been working on for a little
 The API itself is a dedicated RestAPI with CRUD operations, and has all the available courses, professors, and sections of a class in the desired semester. The passwords to their online account are encrpyted and each user session has been tokenized with JWT tokens.
 
 # Getting started
-First you would need to have docker desktop downloaded [here](https://www.docker.com/products/docker-desktop/)
+1. First you would need to have docker desktop downloaded [here](https://www.docker.com/products/docker-desktop/)
 
 ## Docker Desktop
 The API is containerized in these docker containers so that you will not need to worry about downloading dependencies.
 
 You need to trust the third party application, and signing in is optional.
+
+2. Set your .env file using the env-template with your own values
+3. 
 
 # Docker Commands
 - ```Docker-compose up -d``` will build all the containers necessary for the application
@@ -24,6 +27,7 @@ There are a few limitations on my project:
 - This is only designed with the Computer Science BA/BS degree track in mind. Tackling the all the courses for all the majors/degree paths would be a very daunting task to start off with. I will scale my application, only after creating a minimal viable product. 
 - If there is no dependencies, the current program has to first start the API so that it will not prematurely try to connect to the postgres database without first creating it. 
 **Note**: this will usually only happen once (at the start of the container creation with docker), or whenever the local volume is deleted.
+- The scraping file (`scrape.py`) is dependant on the chrome browser version that you are running. As of 2023, to be safe, any chrome versions above 115 will have difficulties. You would need to *downgrade your chrome* in order to get scraped data.
 - This is still in production, so there is still much to do!
 
 # Common problems
